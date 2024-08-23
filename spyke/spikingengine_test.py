@@ -1,13 +1,16 @@
 from spikingengine import SpikingEngine, QueueProcessNeuronFire, QueueProcessNeuronSend, QueueProcessCycleEnd
 from neuron import SpikingNeuron, Synapse
+from dynamics import Counter
 
+
+counter = Counter(0, 1)
 
 w = 1.0
 n1, n2, n3 = SpikingNeuron(), SpikingNeuron(), SpikingNeuron()
 n1.add_connection(Synapse(w, n2))
 n3.add_connection(Synapse(-w, n2))
 
-spiking_engine = SpikingEngine()
+spiking_engine = SpikingEngine(counter)
 assert spiking_engine.process_queue.qsize() == 0
 
 
@@ -116,3 +119,10 @@ spiking_engine.process_cycle()  # Fire, Fire, End -> Send, Send
 spiking_engine.process_queue.get()
 spiking_engine.process_queue.get()
 assert spiking_engine.process_queue.qsize() == 0
+
+
+counter = Counter(0, 1)
+spiking_engine = SpikingEngine(counter)
+spiking_engine.process_cycle()
+spiking_engine.process_cycle()
+assert counter.time_step == 2

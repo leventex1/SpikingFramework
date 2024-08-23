@@ -1,6 +1,7 @@
 import queue
 from abc import ABC
-from neuron import SpikingNeuron, Synapse
+from spyke.neuron import SpikingNeuron, Synapse
+from spyke.dynamics import Counter
 
 
 class QueueProcess(ABC):
@@ -14,11 +15,17 @@ class QueueProcess(ABC):
     def is_process_cycle_finished(self) -> bool:
         pass
 
+    def __str__(self) -> str:
+        pass
+
 
 class QueueProcessCycleEnd(QueueProcess):
 
     def is_process_cycle_finished(self) -> bool:
         return True
+    
+    def __str__(self) -> str:
+        return 'end'
     
 
 class QueueProcessNeuronSend(QueueProcess):
@@ -39,6 +46,9 @@ class QueueProcessNeuronSend(QueueProcess):
 
     def is_process_cycle_finished(self) -> bool:
         return False
+    
+    def __str__(self) -> str:
+        return f'send({self.sending_neuron.id})'
 
 
 class QueueProcessNeuronFire(QueueProcess):
@@ -53,17 +63,33 @@ class QueueProcessNeuronFire(QueueProcess):
             return
         
         self.fireing_neuron.reset_neuron()
-        # On fireing
+        self.fireing_neuron.on_fireing()
         self.engine.add_process(QueueProcessNeuronSend(self.fireing_neuron, self.engine))
 
     def is_process_cycle_finished(self) -> bool:
         return False
+    
+    def __str__(self) -> str:
+        return f'fire({self.fireing_neuron.id})'
 
 
 class SpikingEngine:
+    """
+    SpikingEngine is the graph implementing the spiking neural network 'spinner' algorithm.
+    
+    member variables:
+    - self.process_queue: Queue[QueueProcess], helper container for the dfs treversial.
+    - self.counter: Counter, updates every time the process_cycle is called.
 
-    def __init__(self) -> None:
+    methods:
+    - add_process(self, process: QueueProcess) -> None, adds a QueueProcess to the self.process_queue.
+    - process_cycle(self) -> None, adds an EndProcess to the self.process_queue and processes it while the EndProcess is hit.
+        Suppose the spiking neural network is a graph than if there are fire processes in the queue than the graph is treversed on the edges but only for a distance of 1. 
+    """
+
+    def __init__(self, counter: Counter) -> None:
         self.process_queue: queue.Queue[QueueProcess] = queue.Queue()
+        self.counter = counter
 
     def add_process(self, process: QueueProcess) -> None:
         self.process_queue.put(process)
@@ -79,3 +105,5 @@ class SpikingEngine:
                 break
 
             process.proceed()
+
+        self.counter.update()
