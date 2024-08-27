@@ -40,6 +40,7 @@ class QueueProcessNeuronSend(QueueProcess):
             post_node: SpikingNeuron = connection.end_node
             synapse: Synapse = connection
 
+            post_node.on_before_membrane_change(self.engine.counter.get_current_time_step())
             post_node.change_membrane_value(synapse.weight)
             if post_node.is_fireing():
                 self.engine.add_process(QueueProcessNeuronFire(post_node, self.engine))
