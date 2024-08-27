@@ -1,6 +1,6 @@
 from abc import ABC
 import math
-from spyke.neuron import Synapse
+from spyke.neuron import Synapse, SpikingNeuron
 
 
 class Counter:
@@ -37,3 +37,9 @@ class SynapticUpdater(ABC):
             synapse.weight = 0
         if synapse.weight > 1:
             synapse.weight = 1
+
+
+def exponent_membrane_decay(neuron: SpikingNeuron, time_step: int, tau: float = 20) -> None:
+    dt = time_step - neuron.last_updated_time_step if neuron.last_updated_time_step is not None else time_step
+    neuron.last_updated_time_step = time_step
+    neuron.membrane_value *= math.exp(-dt/tau)
